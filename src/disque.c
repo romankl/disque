@@ -978,6 +978,7 @@ void initServerConfig(void) {
     server.cluster_configfile = zstrdup(DISQUE_DEFAULT_CLUSTER_CONFIG_FILE);
     server.next_client_id = 1; /* Client IDs, start from 1 .*/
     server.loading_process_events_interval_bytes = (1024*1024*2);
+    server.node_state = DISQUE_NODE_ACTIVE;
 
     /* Client output buffer limits */
     for (j = 0; j < DISQUE_CLIENT_TYPE_COUNT; j++)
@@ -2093,6 +2094,16 @@ void monitorCommand(client *c) {
     c->flags |= DISQUE_MONITOR;
     listAddNodeTail(server.monitors,c);
     addReply(c,shared.ok);
+}
+
+int verifyActiveNodeState(client* c) {
+    if (server.node_state == DISQUE_NODE_ACTIVE) {
+        return 1;
+    } else {
+        addReplyError(c,"Command is not possible, because this node is locked. "
+                        "Disable the lockdown first.");
+        return 0;
+    }
 }
 
 /* ============================ Maxmemory directive  ======================== */

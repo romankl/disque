@@ -207,6 +207,9 @@ void gotAckReceived(clusterNode *sender, job *job, int known) {
 void ackjobCommand(client *c) {
     int j, known = 0;
 
+    /* ACK-ing is not possible in the locked state (read-only) */
+    if (verifyActiveNodeState(c) == 0) return;
+
     if (validateJobIDs(c,c->argv+1,c->argc-1) == DISQUE_ERR) return;
 
     /* Perform the appropriate action for each job. */
@@ -248,6 +251,9 @@ void ackjobCommand(client *c) {
  */
 void fastackCommand(client *c) {
     int j, known = 0;
+
+    /* This node is locked, so return an error */
+    if (verifyActiveNodeState(c) == 0) return;
 
     if (validateJobIDs(c,c->argv+1,c->argc-1) == DISQUE_ERR) return;
 

@@ -72,6 +72,22 @@ void debugCommand(client *c) {
         }
         serverLog(DISQUE_WARNING,"Append Only File loaded by DEBUG LOADAOF");
         addReply(c,shared.ok);
+    } else if (!strcasecmp(c->argv[1]->ptr,"lockdown")) {
+        /* Calling DEBUG LOCKDOWN without enable or disable will enable the
+        * lockdown mode. */
+        if (c->argc == 3) {
+            if (!strcasecmp(c->argv[2]->ptr,"enable")) {
+                server.node_state = DISQUE_NODE_LOCKED;
+            } else if (!strcasecmp(c->argv[2]->ptr,"disable")) {
+                server.node_state = DISQUE_NODE_ACTIVE;
+            } else {
+                addReply(c,shared.err);
+                return;
+            }
+        } else {
+            server.node_state = DISQUE_NODE_LOCKED;
+        }
+        addReply(c,shared.ok);
     } else if (!strcasecmp(c->argv[1]->ptr,"sleep") && c->argc == 3) {
         double dtime = strtod(c->argv[2]->ptr,NULL);
         long long utime = dtime*1000000;

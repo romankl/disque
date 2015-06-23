@@ -1015,6 +1015,9 @@ void addjobCommand(client *c) {
     int extrepl = getMemoryWarningLevel() > 0; /* Replicate externally? */
     static uint64_t prev_ctime = 0;
 
+    /* If this node is locked we wont accept new jobs */
+    if (verifyActiveNodeState(c) == 0) return;
+
     /* Parse args. */
     for (j = 4; j < c->argc; j++) {
         char *opt = c->argv[j]->ptr;
@@ -1319,6 +1322,9 @@ void showCommand(client *c) {
 void deljobCommand(client *c) {
     int j, evicted = 0;
 
+    /* If this node is locked deletion of jobs is not allowed */
+    if (verifyActiveNodeState(c) == 0) return;
+
     if (validateJobIDs(c,c->argv+1,c->argc-1) == DISQUE_ERR) return;
 
     /* Perform the appropriate action for each job. */
@@ -1331,4 +1337,3 @@ void deljobCommand(client *c) {
     }
     addReplyLongLong(c,evicted);
 }
-

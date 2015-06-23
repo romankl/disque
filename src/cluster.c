@@ -1286,6 +1286,9 @@ int clusterProcessPacket(clusterLink *link) {
         uint32_t datasize = ntohl(hdr->data.jobs.serialized.datasize);
         job *j;
 
+        /* This node wont accept jobs from the cluster in the locked state */
+        if (server.node_state == DISQUE_NODE_LOCKED) return 1;
+
         /* Only replicate jobs by known nodes. */
         if (!sender || numjobs != 1) return 1;
 
@@ -1327,6 +1330,8 @@ int clusterProcessPacket(clusterLink *link) {
                 jobReplicationAchieved(j);
         }
     } else if (type == CLUSTERMSG_TYPE_SETACK) {
+        if (server.node_state == DISQUE_NODE_LOCKED) return 1;
+
         if (!sender) return 1;
         uint32_t mayhave = ntohl(hdr->data.jobid.job.aux);
 
@@ -1358,6 +1363,8 @@ int clusterProcessPacket(clusterLink *link) {
             tryJobGC(j);
         }
     } else if (type == CLUSTERMSG_TYPE_GOTACK) {
+        if (server.node_state == DISQUE_NODE_LOCKED) return 1;
+
         if (!sender) return 1;
         uint32_t known = ntohl(hdr->data.jobid.job.aux);
 
@@ -1372,6 +1379,8 @@ int clusterProcessPacket(clusterLink *link) {
             freeJob(j);
         }
     } else if (type == CLUSTERMSG_TYPE_ENQUEUE) {
+        if (server.node_state == DISQUE_NODE_LOCKED) return 1;
+
         if (!sender) return 1;
         uint32_t delay = ntohl(hdr->data.jobid.job.aux);
 
@@ -1390,6 +1399,8 @@ int clusterProcessPacket(clusterLink *link) {
         }
     } else if (type == CLUSTERMSG_TYPE_QUEUED ||
                type == CLUSTERMSG_TYPE_WORKING) {
+        if (server.node_state == DISQUE_NODE_LOCKED) return 1;
+
         if (!sender) return 1;
 
         job *j = lookupJob(hdr->data.jobid.job.id);
@@ -1416,11 +1427,14 @@ int clusterProcessPacket(clusterLink *link) {
                                        randomTimeError(DISQUE_TIME_ERR));
             }
         } else if (j && j->state == JOB_STATE_ACKED) {
+            if (server.node_state == DISQUE_NODE_LOCKED) return 1;
             /* Some other node queued a message that we have as
              * already acknowledged. Try to force it to drop it. */
             clusterSendSetAck(sender,j);
         }
     } else if (type == CLUSTERMSG_TYPE_WILLQUEUE) {
+        if (server.node_state == DISQUE_NODE_LOCKED) return 1;
+        
         if (!sender) return 1;
 
         job *j = lookupJob(hdr->data.jobid.job.id);

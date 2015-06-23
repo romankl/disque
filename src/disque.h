@@ -255,6 +255,10 @@ typedef long long mstime_t; /* millisecond time type. */
 #define DISQUE_SHUTDOWN_NOFLAGS 0 /* No flags. */
 #define DISQUE_SHUTDOWN_REWRITE_AOF 1 /* Sync AOF rewrite before exiting. */
 
+/* Server state flags */
+#define DISQUE_NODE_ACTIVE 0
+#define DISQUE_NODE_LOCKED 1
+
 /* Command call flags, see call() function */
 #define DISQUE_CALL_NONE 0
 #define DISQUE_CALL_SLOWLOG 1
@@ -560,6 +564,7 @@ struct disqueServer {
     int assert_line;
     int bug_report_start; /* True if bug report header was already logged. */
     int watchdog_period;  /* Software watchdog period in ms. 0 = off */
+    int node_state;       /* State of this node, default: running= 0 */
 };
 
 typedef void serverCommandProc(client *c);
@@ -788,6 +793,7 @@ struct serverCommand *lookupCommandOrOriginal(sds name);
 void call(client *c, int flags);
 void propagate(struct serverCommand *cmd, robj **argv, int argc, int flags);
 int prepareForShutdown(int flags);
+int verifyActiveNodeState(client* c);
 #ifdef __GNUC__
 void serverLog(int level, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));

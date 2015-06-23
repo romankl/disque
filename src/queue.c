@@ -615,6 +615,9 @@ void getjobCommand(client *c) {
     robj **queues = NULL;
     int j, numqueues = 0;
 
+    /* This node is locked, so return an error */
+    if (verifyActiveNodeState(c) == 0) return;
+
     /* Parse args. */
     for (j = 1; j < c->argc; j++) {
         char *opt = c->argv[j]->ptr;
@@ -708,6 +711,9 @@ void getjobCommand(client *c) {
 void enqueueCommand(client *c) {
     int j, enqueued = 0;
 
+    /* If this node is locked we wont accept new jobs */
+    if (verifyActiveNodeState(c) == 0) return;
+
     if (validateJobIDs(c,c->argv+1,c->argc-1) == DISQUE_ERR) return;
 
     /* Enqueue all the jobs in active state. */
@@ -730,6 +736,9 @@ void enqueueCommand(client *c) {
  * Return the number of jobs actually moved from queue to active state. */
 void dequeueCommand(client *c) {
     int j, dequeued = 0;
+
+    /* If this node is locked we wont accept new jobs */
+    if (verifyActiveNodeState(c) == 0) return;
 
     if (validateJobIDs(c,c->argv+1,c->argc-1) == DISQUE_ERR) return;
 
@@ -935,6 +944,9 @@ void qscanCommand(client *c) {
  *            delay it.
  */
 void workingCommand(client *c) {
+    /* If this node is locked we wont accept new jobs */
+    if (verifyActiveNodeState(c) == 0) return;
+
     if (validateJobIDs(c,c->argv+1,1) == DISQUE_ERR) return;
 
     job *job = lookupJob(c->argv[1]->ptr);
